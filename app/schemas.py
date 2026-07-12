@@ -50,11 +50,17 @@ class TicketResponse(BaseModel):
 
 
 class TicketDetailResponse(TicketResponse):
-    queue_id: str
+    # GET /tickets/{ticket_id} for a standalone ticket (queue_id=None) fails response serialization → HTTP 500.
+    # Optional DB fields must be optional in response schemas too.
+    
+    queue_id: str | None = None
 
 
 class TicketComplexityUpdate(BaseModel):
-    complexity: int = Field(..., gt=0)
+    # Spec says complexity >= 0. PATCH with {"complexity": 0} returns 422 Validation Error.
+    # gt=0 means strictly greater than 0. ge=0 means greater than or equal — matches the spec and other schemas (TicketCreate uses ge=0).
+    
+    complexity: int = Field(..., ge=0)
 
 
 # --- Queue full view ---

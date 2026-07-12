@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import joinedload
 
 from app.config import settings
 from app.models import Queue
@@ -31,12 +32,22 @@ def delete_queue(db: Session, queue_id: str) -> None:
     queue = get_queue_by_id(db, queue_id)
     if not queue:
         raise ValueError("queue_not_found")
+    
+    # This check blocks queue deletion while tickets still belong to it, which avoids orphaned ticket rows.
+    # The rule is enforced here so the database remains consistent and the API behavior matches the spec.
+
+    if queue.current_ticket_count > 0:
+        raise ValueError("queue_has_tickets")
+    
     db.delete(queue)
     db.commit()
 
 
 def get_full_view(db: Session) -> list[QueueFullView]:
-    queues = db.query(Queue).all()
+    # 1 query for queues + N queries for tickets. With 100 queues → 101 DB round trips.
+    # Eager loading (joinedload / selectinload) fetches related data in O(1) queries.
+
+    queues = db.query(Queue).options(joinedload(Queue.tickets)).all()
     result = []
     for queue in queues:
         # queue.tickets loaded per queue (N+1)

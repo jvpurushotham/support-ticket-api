@@ -66,6 +66,8 @@ def delete_queue(queue_id: str, db: Session = Depends(get_db)):
     except ValueError as e:
         if str(e) == "queue_not_found":
             _queue_404()
+        if str(e) == "queue_has_tickets":
+            raise HTTPException(status_code=400, detail="Queue has tickets")
         raise
 
 
@@ -87,6 +89,8 @@ def add_ticket_to_queue(queue_id: str, data: TicketCreate, db: Session = Depends
                 status_code=400,
                 detail="Total tickets would exceed queue capacity",
             )
+        if str(e) == "invalid_quantity":
+            raise HTTPException(status_code=400, detail="Invalid quantity")
         raise
 
 
@@ -103,6 +107,8 @@ def bulk_add_tickets(queue_id: str, body: TicketBulkRequest, db: Session = Depen
                 status_code=400,
                 detail="Total tickets would exceed queue capacity",
             )
+        if str(e) == "invalid_quantity":
+            raise HTTPException(status_code=400, detail="Invalid quantity")
         raise
 
 

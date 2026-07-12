@@ -41,6 +41,8 @@ def create_ticket(data: TicketCreateStandalone, db: Session = Depends(get_db)):
                 status_code=400,
                 detail="Total tickets would exceed queue capacity",
             )
+        if str(e) == "invalid_quantity":
+            raise HTTPException(status_code=400, detail="Invalid quantity")
         raise
 
 
